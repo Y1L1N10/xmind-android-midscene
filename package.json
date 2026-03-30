@@ -1,0 +1,22 @@
+{
+  "name": "xmind-android-midscene",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "dotenv -e .env -- vitest run",
+    "test:mindmap": "dotenv -e .env -- vitest run tests/mindmap.test.ts",
+    "test:login": "dotenv -e .env -- vitest run tests/login.test.ts",
+    "test:sync": "dotenv -e .env -- vitest run tests/sync.test.ts",
+    "test:watch": "dotenv -e .env -- vitest",
+    "test:report": "OPEN_REPORT=1 dotenv -e .env -- vitest run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@midscene/android": "^1.6.0",
+    "dotenv-cli": "^11.0.0",
+    "vitest": "^4.1.2"
+  }
+}
