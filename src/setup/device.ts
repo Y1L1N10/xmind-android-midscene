@@ -7,7 +7,7 @@ export async function createAgent(testName: string) {
   if (!devices.length) throw new Error('没有找到 adb 设备，请检查连接');
 
   const device = new AndroidDevice(devices[0].udid, {
-    scrcpyConfig: { enabled: false },
+    scrcpyConfig: { enabled: true },
   });
   await device.connect();
 

@@ -1,6 +1,7 @@
 import { beforeEach, afterEach, afterAll } from 'vitest';
 import { execSync } from 'node:child_process';
-import { sleep } from '@midscene/core/utils';
+import { readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { ReportMergingTool } from '@midscene/core/report';
 import { createAgent, XMIND_PACKAGE, forceStopApp, clearAppData, disableSystemPopups } from './device';
 import type { AndroidAgent, AndroidDevice } from '@midscene/android';
@@ -11,12 +12,16 @@ export interface SetupOptions {
   clearData?: boolean;
   /** 是否自动 force-stop + launch 应用，默认 true；连贯测试场景设为 false */
   autoLaunch?: boolean;
-  /** launch 后的等待时间（ms），默认 3000 */
-  launchWaitMs?: number;
+  /** launch 后等待应用就绪的条件描述，默认检测首页加载完成 */
+  waitForReady?: string;
 }
 
 export function setupAndroidTest(reportName: string, options: SetupOptions = {}) {
-  const { clearData = false, autoLaunch = true, launchWaitMs = 3000 } = options;
+  const {
+    clearData = false,
+    autoLaunch = true,
+    waitForReady = '应用主界面已加载完成',
+  } = options;
 
   let device: AndroidDevice;
   let agent: AndroidAgent;
@@ -32,7 +37,6 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
     }
 
     if (autoLaunch) {
-      // 重置应用状态：clearData 会清除所有数据，否则只 force-stop
       if (clearData) {
         await clearAppData(agent);
       } else {
@@ -40,7 +44,8 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
       }
 
       await agent.launch(XMIND_PACKAGE);
-      await sleep(launchWaitMs);
+      // pm clear 后冷启动慢，5 秒间隔避免在启动页浪费 AI 轮询
+      await agent.aiWaitFor(waitForReady, { timeoutMs: 15000, checkIntervalMs: 5000 });
     }
   });
 
@@ -63,18 +68,22 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
   });
 
   afterAll(() => {
-    let reportPath: string | undefined;
-
     try {
-      reportPath = reportMergingTool.mergeReports(reportName) as unknown as string;
+      reportMergingTool.mergeReports(reportName);
     } catch {
-      // 单条用例时不合并，取最后一条单独报告
-      reportPath = agent?.reportFile as string | undefined;
+      // 单条用例时不合并，直接看单条报告
     }
 
-    if (reportPath && process.env.OPEN_REPORT) {
+    if (process.env.OPEN_REPORT) {
       try {
-        execSync(`open "${reportPath}"`);
+        const reportDir = join(process.cwd(), 'midscene_run', 'report');
+        const files = readdirSync(reportDir)
+          .filter((f) => f.endsWith('.html'))
+          .map((f) => ({ name: f, mtime: statSync(join(reportDir, f)).mtimeMs }))
+          .sort((a, b) => b.mtime - a.mtime);
+        if (files.length) {
+          execSync(`open "${join(reportDir, files[0].name)}"`);
+        }
       } catch {}
     }
   });
