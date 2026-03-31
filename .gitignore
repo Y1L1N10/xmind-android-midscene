@@ -1,3 +1,4 @@
 .env
 midscene_run/
 node_modules/
+.claude

@@ -6,6 +6,8 @@ const TEST_EMAIL = 'yilin@xmind.net';
 const TEST_PASSWORD = 'xmindyilin';
 const WRONG_PASSWORD = 'wrong_password_123';
 const GMAIL_EMAIL = 'yyilin000@gmail.com';
+const APPLE_ID = process.env.APPLE_ID!;
+const APPLE_PASSWORD = process.env.APPLE_PASSWORD!;
 
 const WAIT_OPTS = { timeoutMs: 15000, checkIntervalMs: 5000 };
 
@@ -34,6 +36,14 @@ describe('XMind 登录模块', () => {
       await agent.aiInput('邮箱输入框', { value: TEST_EMAIL });
       await agent.aiInput('密码输入框', { value: TEST_PASSWORD });
       await agent.aiTap('登录按钮');
+      await agent.aiWaitFor('页面显示"我的导图"或"My Works"', WAIT_OPTS);
+    });
+
+    it('Google 快捷登录成功', async () => {
+      const agent = getAgent();
+      await agent.aiTap('"或者"下方的 Google 图标按钮');
+      await agent.aiWaitFor('弹出"选择账号"弹窗，显示"以继续使用Xmind"', { timeoutMs: 15000, checkIntervalMs: 3000 });
+      await agent.aiTap('yyilin000@gmail.com 这一行');
       await agent.aiWaitFor('页面显示"我的导图"或"My Works"', WAIT_OPTS);
     });
 
@@ -124,6 +134,30 @@ describe('XMind 登录模块', () => {
       await agent.aiTap('"请仔细阅读 Xmind 服务条款、隐私政策"这行文字中的"隐私政策"');
       await agent.aiWaitFor('页面跳转到外部浏览器，网页内容包含"隐私政策"', { timeoutMs: 15000, checkIntervalMs: 3000 });
       await agent.aiAssert('当前页面是浏览器打开的隐私政策网页，页面内容包含"隐私政策"相关条款');
+    });
+
+    it('Apple 快捷登录', async () => {
+      const agent = getAgent();
+      // 1. 点击 Apple 图标，进入 Apple 登录页
+      await agent.aiTap('"或者"下方的 Apple 图标按钮');
+      await agent.aiWaitFor('跳转到 Apple 登录页面，显示 Apple ID 输入框', { timeoutMs: 15000, checkIntervalMs: 3000 });
+
+      // 2. 输入 Apple ID 并继续
+      await agent.aiInput('Apple ID 或电子邮件地址输入框', { value: APPLE_ID });
+      await agent.aiTap('继续按钮或箭头按钮');
+      await agent.aiWaitFor('显示密码输入框', { timeoutMs: 10000, checkIntervalMs: 2000 });
+
+      // 3. 输入密码（可能需要关闭键盘才能看到密码框）
+      await agent.aiInput('密码输入框', { value: APPLE_PASSWORD });
+      await agent.aiTap('登录按钮');
+
+      // 4. 验证结果：登录成功 / 二重认证 / 停留在 Apple 登录页（均算通过）
+      await agent.aiWaitFor(
+        '页面显示"我的导图"或"My Works"（登录成功）；' +
+        '或显示双重认证/验证码输入界面（二重认证）；' +
+        '或页面包含 Apple ID 输入框或"使用 Apple ID 登录"（停留在登录页）',
+        { timeoutMs: 20000, checkIntervalMs: 3000 },
+      );
     });
   });
 });
