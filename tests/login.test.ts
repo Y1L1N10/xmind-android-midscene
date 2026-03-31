@@ -111,5 +111,19 @@ describe('XMind 登录模块', () => {
       await agent.aiTap('密码输入框右侧的眼睛图标');
       await agent.aiWaitFor('密码输入框的内容变为明文可见', { timeoutMs: 5000 });
     });
+
+    it('服务条款跳转外部浏览器', async () => {
+      const agent = getAgent();
+      await agent.aiTap('"请仔细阅读 Xmind 服务条款"这行文字中的"服务条款"');
+      await agent.aiWaitFor('页面跳转到外部浏览器，网页内容包含"服务条款"', { timeoutMs: 15000, checkIntervalMs: 3000 });
+      await agent.aiAssert('当前页面是浏览器打开的服务条款网页，页面内容包含"服务条款"相关条款');
+    });
+
+    it('隐私政策跳转外部浏览器', async () => {
+      const agent = getAgent();
+      await agent.aiTap('"请仔细阅读 Xmind 服务条款、隐私政策"这行文字中的"隐私政策"');
+      await agent.aiWaitFor('页面跳转到外部浏览器，网页内容包含"隐私政策"', { timeoutMs: 15000, checkIntervalMs: 3000 });
+      await agent.aiAssert('当前页面是浏览器打开的隐私政策网页，页面内容包含"隐私政策"相关条款');
+    });
   });
 });
