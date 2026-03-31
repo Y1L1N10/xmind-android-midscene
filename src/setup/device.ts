@@ -1,6 +1,7 @@
 import { AndroidDevice, AndroidAgent, getConnectedDevices } from '@midscene/android';
 
 export const XMIND_PACKAGE = 'net.xmind.doughnut';
+export const XMIND_LOGIN_ACTIVITY = `${XMIND_PACKAGE}/net.xmind.bagel.user.ui.WebLoginActivity`;
 
 export async function createAgent(testName: string) {
   const devices = await getConnectedDevices();
@@ -43,4 +44,11 @@ export async function forceStopApp(agent: AndroidAgent, pkg = XMIND_PACKAGE) {
  */
 export async function clearAppData(agent: AndroidAgent, pkg = XMIND_PACKAGE) {
   await agent.runAdbShell(`pm clear ${pkg}`);
+}
+
+/**
+ * 直接启动指定 Activity，跳过主页导航
+ */
+export async function launchActivity(agent: AndroidAgent, activity: string) {
+  await agent.runAdbShell(`am start -n ${activity}`);
 }

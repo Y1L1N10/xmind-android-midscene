@@ -54,6 +54,11 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
     const testStatus: TestStatus =
       state === 'pass' ? 'passed' : state === 'skip' ? 'skipped' : 'failed';
 
+    // 必须先 destroy agent 让报告写入磁盘，再读取 reportFile
+    if (agent) {
+      await agent.destroy();
+    }
+
     if (agent?.reportFile) {
       reportMergingTool.append({
         reportFilePath: agent.reportFile as string,
@@ -68,22 +73,26 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
   });
 
   afterAll(() => {
+    let mergedPath: string | null = null;
     try {
-      reportMergingTool.mergeReports(reportName);
-    } catch {
-      // 单条用例时不合并，直接看单条报告
+      mergedPath = reportMergingTool.mergeReports(reportName, { overwrite: true });
+    } catch (err) {
+      console.log('[Report] 合并报告失败:', err);
     }
 
     if (process.env.OPEN_REPORT) {
       try {
-        const reportDir = join(process.cwd(), 'midscene_run', 'report');
-        const files = readdirSync(reportDir)
-          .filter((f) => f.endsWith('.html'))
-          .map((f) => ({ name: f, mtime: statSync(join(reportDir, f)).mtimeMs }))
-          .sort((a, b) => b.mtime - a.mtime);
-        if (files.length) {
-          execSync(`open "${join(reportDir, files[0].name)}"`);
+        // 优先打开合并报告，否则打开最新的单条报告
+        let pathToOpen = mergedPath;
+        if (!pathToOpen) {
+          const reportDir = join(process.cwd(), 'midscene_run', 'report');
+          const files = readdirSync(reportDir)
+            .filter((f) => f.endsWith('.html'))
+            .map((f) => ({ name: f, mtime: statSync(join(reportDir, f)).mtimeMs }))
+            .sort((a, b) => b.mtime - a.mtime);
+          if (files.length) pathToOpen = join(reportDir, files[0].name);
         }
+        if (pathToOpen) execSync(`open "${pathToOpen}"`);
       } catch {}
     }
   });

@@ -18,5 +18,8 @@
     "@midscene/android": "^1.6.0",
     "dotenv-cli": "^11.0.0",
     "vitest": "^4.1.2"
+  },
+  "dependencies": {
+    "imapflow": "^1.2.18"
   }
 }
