@@ -33,3 +33,35 @@ export function isHarmony(): boolean {
 export function isAndroid(): boolean {
   return getPlatform() === 'android';
 }
+
+// ─── 应用版本 ───────────────────────────────────────────────
+/** 应用版本：海外版(overseas) / 国内版(china) / 鸿蒙(harmony) */
+export type AppVariant = 'overseas' | 'china' | 'harmony';
+
+/**
+ * 获取当前应用版本
+ * 优先级：VARIANT 环境变量 > 平台自动推断
+ * - harmony 平台 → harmony
+ * - android 平台默认 overseas，可通过 VARIANT=china 覆盖
+ */
+export function getVariant(): AppVariant {
+  const env = process.env.VARIANT?.toLowerCase();
+  if (env === 'china') return 'china';
+  if (env === 'harmony') return 'harmony';
+  if (env === 'overseas') return 'overseas';
+  return isHarmony() ? 'harmony' : 'overseas';
+}
+
+// ─── 功能特性检测 ────────────────────────────────────────────
+/** 是否有 Google 快捷登录 */
+export const hasGoogleLogin = () => getVariant() === 'overseas';
+/** 是否有 Apple 快捷登录 */
+export const hasAppleLogin = () => getVariant() === 'overseas';
+/** 是否有 SSO 登录 */
+export const hasSSOLogin = () => getVariant() === 'overseas';
+/** 是否有华为一键登录（登录页首屏） */
+export const hasHuaweiLogin = () => getVariant() === 'harmony';
+/** 验证码登录是否使用邮箱（否则用手机号） */
+export const hasEmailVerification = () => getVariant() === 'overseas';
+/** 进入登录页是否需要跳过华为一键登录首屏 */
+export const hasHuaweiEntryPage = () => getVariant() === 'harmony';

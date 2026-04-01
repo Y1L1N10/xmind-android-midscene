@@ -4,7 +4,7 @@ import { getPlatform, isHarmony, type UnifiedAgent, type UnifiedDevice } from '.
 /** Android 包名 */
 export const XMIND_PACKAGE = 'net.xmind.doughnut';
 /** HarmonyOS Bundle Name（请根据实际鸿蒙包名修改） */
-export const XMIND_HARMONY_BUNDLE = 'net.xmind.doughnut';
+export const XMIND_HARMONY_BUNDLE = 'app.xmind.cronut';
 
 /** 根据当前平台返回正确的应用标识 */
 export function getAppId(): string {
@@ -100,7 +100,8 @@ export async function forceStopApp(agent: UnifiedAgent, appId?: string) {
 export async function clearAppData(agent: UnifiedAgent, appId?: string) {
   const id = appId ?? getAppId();
   if (isHarmony()) {
-    await runShell(agent, `bm clean -n ${id} -c`);
+    // -d 清除数据，-c 仅清缓存；两者都清确保完全重置
+    await runShell(agent, `bm clean -n ${id} -d -c`);
   } else {
     await runShell(agent, `pm clear ${id}`);
   }

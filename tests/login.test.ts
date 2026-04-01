@@ -1,9 +1,15 @@
 import { describe, it, beforeEach } from 'vitest';
 import { setupAndroidTest } from '../src/setup/testBase';
+import {
+  isHarmony,
+  hasGoogleLogin, hasAppleLogin, hasHuaweiLogin, hasHuaweiEntryPage,
+  hasEmailVerification,
+} from '../src/setup/platform';
 import { fetchVerificationCode } from '../src/setup/gmail';
 
-const TEST_EMAIL = 'yilin@xmind.net';
-const TEST_PASSWORD = 'xmindyilin';
+// 根据平台使用不同的测试账号
+const TEST_EMAIL = isHarmony() ? process.env.HARMONY_EMAIL! : 'yilin@xmind.net';
+const TEST_PASSWORD = isHarmony() ? process.env.HARMONY_PASSWORD! : 'xmindyilin';
 const WRONG_PASSWORD = 'wrong_password_123';
 const GMAIL_EMAIL = 'yyilin000@gmail.com';
 const APPLE_ID = process.env.APPLE_ID!;
@@ -25,9 +31,15 @@ const { getAgent } = setupAndroidTest('xmind-login-report', {
 
 describe('XMind 登录模块', () => {
 
+  // 导航到密码登录表单
+  // 首页 → 点击侧栏"登录" → [鸿蒙: 华为一键登录页 → "其他方式登录"] → 密码登录表单
   beforeEach(async () => {
     const agent = getAgent();
     await agent.aiTap('左侧导航栏中的"登录"按钮');
+    if (hasHuaweiEntryPage()) {
+      // 用 aiAct 合并等待+点击，避免过渡页截图导致额外轮询
+      await agent.aiAct('等待华为一键登录页面加载完成后，点击"其他方式登录"');
+    }
     await agent.aiWaitFor('页面显示邮箱输入框和密码输入框', WAIT_OPTS);
   });
 
@@ -35,14 +47,19 @@ describe('XMind 登录模块', () => {
   describe('P0 - 核心登录流程', () => {
     it('登录页面元素完整', async () => {
       const agent = getAgent();
-      await agent.aiAssert(
+      const baseAssert =
         '页面顶部显示"登录 Xmind 账户"标题；' +
         '存在"密码登录"和"验证码登录"两个Tab，"密码登录"为选中状态；' +
-        '有邮箱输入框和密码输入框；有登录按钮；' +
-        '有"忘记密码?"和"创建账户"链接；' +
-        '有 Apple、Google、SSO 三种第三方登录图标',
-      );
+        '有邮箱输入框和密码输入框；有登录按钮';
+      if (hasGoogleLogin()) {
+        await agent.aiAssert(
+          baseAssert + '；有"忘记密码?"和"创建账户"链接；有 Apple、Google、SSO 三种第三方登录图标',
+        );
+      } else {
+        await agent.aiAssert(baseAssert);
+      }
     });
+
     it('密码登录成功', async () => {
       const agent = getAgent();
       await agent.aiInput('邮箱输入框', { value: TEST_EMAIL });
@@ -51,7 +68,8 @@ describe('XMind 登录模块', () => {
       await agent.aiWaitFor('页面显示"我的导图"或"My Works"', WAIT_OPTS);
     });
 
-    it('验证码登录成功', async () => {
+    // 海外版：邮箱验证码登录
+    it.skipIf(!hasEmailVerification())('验证码登录成功（邮箱）', async () => {
       const agent = getAgent();
       await agent.aiTap('"验证码登录"Tab');
       await agent.aiWaitFor('"验证码登录"Tab 为当前选中状态', { timeoutMs: 5000 });
@@ -65,12 +83,24 @@ describe('XMind 登录模块', () => {
       await agent.aiWaitFor('页面显示"我的导图"或"My Works"', WAIT_OPTS);
     });
 
-    it('Google 快捷登录成功', async () => {
+    // 海外版：Google 快捷登录
+    it.skipIf(!hasGoogleLogin())('Google 快捷登录成功', async () => {
       const agent = getAgent();
       await agent.aiTap('"或者"下方的 Google 图标按钮');
       await agent.aiWaitFor('弹出"选择账号"弹窗，显示"以继续使用Xmind"', { timeoutMs: 15000, checkIntervalMs: 3000 });
       await agent.aiTap('yyilin000@gmail.com 这一行');
       await agent.aiWaitFor('页面显示"我的导图"或"My Works"', WAIT_OPTS);
+    });
+
+    // 鸿蒙：华为一键登录
+    it.skipIf(!hasHuaweiLogin())('华为一键登录成功', async () => {
+      const agent = getAgent();
+      // beforeEach 已导航到密码登录，需返回华为一键登录页
+      await agent.aiTap('返回按钮或左上角返回');
+      await agent.aiWaitFor('显示华为一键登录页面', WAIT_OPTS);
+      await agent.aiTap('同意协议的勾选框');
+      await agent.aiTap('华为一键登录按钮');
+      await agent.aiWaitFor('页面显示"我的导图"或"My Works"', { timeoutMs: 20000, checkIntervalMs: 3000 });
     });
   });
 
@@ -98,7 +128,8 @@ describe('XMind 登录模块', () => {
       await agent.aiAssert('仍停留在登录页面，未发生页面跳转');
     });
 
-    it('验证码登录触发人机校验', async () => {
+    // 海外版：邮箱验证码人机校验
+    it.skipIf(!hasEmailVerification())('验证码登录触发人机校验', async () => {
       const agent = getAgent();
       await agent.aiTap('"验证码登录"Tab');
       await agent.aiWaitFor('"验证码登录"Tab 为当前选中状态', { timeoutMs: 5000 });
@@ -111,7 +142,6 @@ describe('XMind 登录模块', () => {
 
   // ===================== P2 - UI 交互与展示 =====================
   describe('P2 - UI 交互与展示', () => {
-
     it('密码可见性切换', async () => {
       const agent = getAgent();
       await agent.aiInput('密码输入框', { value: WRONG_PASSWORD });
@@ -134,23 +164,19 @@ describe('XMind 登录模块', () => {
   });
 
   // ===================== P3 - 第三方登录（依赖外部状态） =====================
-  describe('P3 - 第三方登录', () => {
+  describe.skipIf(!hasAppleLogin())('P3 - 第三方登录', () => {
     it('Apple 快捷登录', async () => {
       const agent = getAgent();
-      // 1. 点击 Apple 图标，进入 Apple 登录页
       await agent.aiTap('"或者"下方的 Apple 图标按钮');
       await agent.aiWaitFor('跳转到 Apple 登录页面，显示 Apple ID 输入框', { timeoutMs: 15000, checkIntervalMs: 3000 });
 
-      // 2. 输入 Apple ID 并继续
       await agent.aiInput('Apple ID 或电子邮件地址输入框', { value: APPLE_ID });
       await agent.aiTap('继续按钮或箭头按钮');
       await agent.aiWaitFor('显示密码输入框', { timeoutMs: 10000, checkIntervalMs: 2000 });
 
-      // 3. 输入密码
       await agent.aiInput('密码输入框', { value: APPLE_PASSWORD });
       await agent.aiTap('登录按钮');
 
-      // 4. 验证结果：登录成功 / 二重认证 / 停留在 Apple 登录页（均算通过）
       await agent.aiWaitFor(
         '页面显示"我的导图"或"My Works"（登录成功）；' +
         '或显示双重认证/验证码输入界面（二重认证）；' +
