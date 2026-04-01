@@ -3,8 +3,8 @@ import { execSync } from 'node:child_process';
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { ReportMergingTool } from '@midscene/core/report';
-import { createAgent, XMIND_PACKAGE, forceStopApp, clearAppData, disableSystemPopups } from './device';
-import type { AndroidAgent, AndroidDevice } from '@midscene/android';
+import { createAgent, getAppId, forceStopApp, clearAppData, disableSystemPopups } from './device';
+import type { UnifiedAgent, UnifiedDevice } from './platform';
 import type { TestStatus } from '@midscene/core';
 
 export interface SetupOptions {
@@ -23,8 +23,8 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
     waitForReady = '应用主界面已加载完成',
   } = options;
 
-  let device: AndroidDevice;
-  let agent: AndroidAgent;
+  let device: UnifiedDevice;
+  let agent: UnifiedAgent;
   let systemPopupsDisabled = false;
   const reportMergingTool = new ReportMergingTool();
 
@@ -43,8 +43,8 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
         await forceStopApp(agent);
       }
 
-      await agent.launch(XMIND_PACKAGE);
-      // pm clear 后冷启动慢，5 秒间隔避免在启动页浪费 AI 轮询
+      await agent.launch(getAppId());
+      // pm clear / bm clean 后冷启动慢，5 秒间隔避免在启动页浪费 AI 轮询
       await agent.aiWaitFor(waitForReady, { timeoutMs: 15000, checkIntervalMs: 5000 });
     }
   });

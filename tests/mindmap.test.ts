@@ -1,6 +1,6 @@
 import { describe, it, beforeAll } from 'vitest';
 import { setupAndroidTest } from '../src/setup/testBase';
-import { XMIND_PACKAGE, forceStopApp } from '../src/setup/device';
+import { getAppId, forceStopApp } from '../src/setup/device';
 
 const { getAgent } = setupAndroidTest('xmind-mindmap-report', { autoLaunch: false });
 
@@ -9,7 +9,7 @@ describe('XMind 思维导图核心操作', () => {
   beforeAll(async () => {
     const agent = getAgent();
     await forceStopApp(agent);
-    await agent.launch(XMIND_PACKAGE);
+    await agent.launch(getAppId());
     await agent.aiWaitFor('能看到导图列表或新建入口', { timeoutMs: 15000 });
   });
 
