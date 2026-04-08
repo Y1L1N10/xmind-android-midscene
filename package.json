@@ -7,6 +7,8 @@
     "test": "dotenv -e .env -- vitest run",
     "test:mindmap": "dotenv -e .env -- vitest run tests/mindmap.test.ts",
     "test:login": "dotenv -e .env -- vitest run tests/login.test.ts",
+    "test:create": "dotenv -e .env -- vitest run tests/create.test.ts",
+    "test:regression": "dotenv -e .env -- vitest run tests/regression.test.ts",
     "test:sync": "dotenv -e .env -- vitest run tests/sync.test.ts",
     "test:watch": "dotenv -e .env -- vitest",
     "test:report": "OPEN_REPORT=1 dotenv -e .env -- vitest run"

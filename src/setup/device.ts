@@ -3,11 +3,20 @@ import { AndroidDevice, AndroidAgent, getConnectedDevices } from '@midscene/andr
 export const XMIND_PACKAGE = 'net.xmind.doughnut';
 export const XMIND_LOGIN_ACTIVITY = `${XMIND_PACKAGE}/net.xmind.bagel.user.ui.WebLoginActivity`;
 
-export async function createAgent(testName: string) {
+export async function createAgent(testName: string, deviceSerial?: string) {
   const devices = await getConnectedDevices();
   if (!devices.length) throw new Error('没有找到 adb 设备，请检查连接');
 
-  const device = new AndroidDevice(devices[0].udid, {
+  const target = deviceSerial
+    ? devices.find((d) => d.udid === deviceSerial)
+    : devices[0];
+  if (!target) {
+    throw new Error(
+      `找不到指定设备 ${deviceSerial}，已连接设备：${devices.map((d) => d.udid).join(', ')}`,
+    );
+  }
+
+  const device = new AndroidDevice(target.udid, {
     scrcpyConfig: { enabled: true },
   });
   await device.connect();

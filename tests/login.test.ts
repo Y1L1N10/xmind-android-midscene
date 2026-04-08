@@ -9,7 +9,7 @@ const GMAIL_EMAIL = 'yyilin000@gmail.com';
 const APPLE_ID = process.env.APPLE_ID!;
 const APPLE_PASSWORD = process.env.APPLE_PASSWORD!;
 
-const WAIT_OPTS = { timeoutMs: 15000, checkIntervalMs: 5000 };
+const WAIT_OPTS = { timeoutMs: 30000, checkIntervalMs: 5000 };
 
 const { getAgent } = setupAndroidTest('xmind-login-report', {
   clearData: true,

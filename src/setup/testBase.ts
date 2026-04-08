@@ -14,6 +14,8 @@ export interface SetupOptions {
   autoLaunch?: boolean;
   /** launch 后等待应用就绪的条件描述，默认检测首页加载完成 */
   waitForReady?: string;
+  /** 指定设备序列号（adb devices 中的 udid），不传则使用第一个连接的设备 */
+  deviceSerial?: string;
 }
 
 export function setupAndroidTest(reportName: string, options: SetupOptions = {}) {
@@ -21,6 +23,7 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
     clearData = false,
     autoLaunch = true,
     waitForReady = '应用主界面已加载完成',
+    deviceSerial,
   } = options;
 
   let device: AndroidDevice;
@@ -29,7 +32,7 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
   const reportMergingTool = new ReportMergingTool();
 
   beforeEach(async (ctx) => {
-    ({ device, agent } = await createAgent(ctx.task.name));
+    ({ device, agent } = await createAgent(ctx.task.name, deviceSerial));
 
     if (!systemPopupsDisabled) {
       await disableSystemPopups(agent);
