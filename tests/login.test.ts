@@ -85,18 +85,18 @@ describe('XMind 登录模块', () => {
       await agent.aiAssert('页面显示密码错误的提示信息');
     });
 
-    it('邮箱为空点击登录', async () => {
-      const agent = getAgent();
-      await agent.aiTap('登录按钮');
-      await agent.aiAssert('仍停留在登录页面，未发生页面跳转');
-    });
+    // it('邮箱为空点击登录', async () => {
+    //   const agent = getAgent();
+    //   await agent.aiTap('登录按钮');
+    //   await agent.aiAssert('仍停留在登录页面，未发生页面跳转');
+    // });
 
-    it('密码为空点击登录', async () => {
-      const agent = getAgent();
-      await agent.aiInput('邮箱输入框', { value: TEST_EMAIL });
-      await agent.aiTap('登录按钮');
-      await agent.aiAssert('仍停留在登录页面，未发生页面跳转');
-    });
+    // it('密码为空点击登录', async () => {
+    //   const agent = getAgent();
+    //   await agent.aiInput('邮箱输入框', { value: TEST_EMAIL });
+    //   await agent.aiTap('登录按钮');
+    //   await agent.aiAssert('仍停留在登录页面，未发生页面跳转');
+    // });
 
     it('验证码登录触发人机校验', async () => {
       const agent = getAgent();

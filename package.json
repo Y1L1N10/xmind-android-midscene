@@ -17,7 +17,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@midscene/android": "^1.6.0",
+    "@midscene/android": "^1.7.2",
     "dotenv-cli": "^11.0.0",
     "vitest": "^4.1.2"
   },

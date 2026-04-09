@@ -1,6 +1,6 @@
 import { beforeEach, afterEach, afterAll } from 'vitest';
 import { execSync } from 'node:child_process';
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync, statSync, mkdirSync, renameSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { ReportMergingTool } from '@midscene/core/report';
 import { createAgent, XMIND_PACKAGE, forceStopApp, clearAppData, disableSystemPopups } from './device';
@@ -32,7 +32,15 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
   const reportMergingTool = new ReportMergingTool();
 
   beforeEach(async (ctx) => {
-    ({ device, agent } = await createAgent(ctx.task.name, deviceSerial));
+    // 拼接 describe 链路（支持嵌套 describe），作为报告里的分组描述
+    const suiteNames: string[] = [];
+    let suite = ctx.task.suite;
+    while (suite && suite.name) {
+      suiteNames.unshift(suite.name);
+      suite = suite.suite;
+    }
+    const groupDescription = suiteNames.join(' › ') || ctx.task.name;
+    ({ device, agent } = await createAgent(ctx.task.name, deviceSerial, groupDescription));
 
     if (!systemPopupsDisabled) {
       await disableSystemPopups(agent);
@@ -78,12 +86,31 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
   afterAll(() => {
     let mergedPath: string | null = null;
     try {
-      mergedPath = reportMergingTool.mergeReports(reportName, { overwrite: true });
+      // 默认按 日期目录/时间戳 归档，NO_ARCHIVE=1 时退回到覆盖模式
+      const archive = !process.env.NO_ARCHIVE;
+      if (archive) {
+        const now = new Date();
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const dateDir = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+        const timeStr = `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+        const finalName = `${reportName}-${timeStr}`;
+        const tmpPath = reportMergingTool.mergeReports(finalName, { overwrite: false });
+        // 把生成的报告移动到 midscene_run/report/<日期>/ 下
+        if (tmpPath) {
+          const targetDir = join(process.cwd(), 'midscene_run', 'report', dateDir);
+          if (!existsSync(targetDir)) mkdirSync(targetDir, { recursive: true });
+          const targetPath = join(targetDir, `${finalName}.html`);
+          renameSync(tmpPath, targetPath);
+          mergedPath = targetPath;
+        }
+      } else {
+        mergedPath = reportMergingTool.mergeReports(reportName, { overwrite: true });
+      }
     } catch (err) {
       console.log('[Report] 合并报告失败:', err);
     }
 
-    if (process.env.OPEN_REPORT) {
+    if (!process.env.NO_OPEN) {
       try {
         // 优先打开合并报告，否则打开最新的单条报告
         let pathToOpen = mergedPath;
