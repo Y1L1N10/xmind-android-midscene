@@ -11,6 +11,7 @@
     "test:regression": "dotenv -e .env -- vitest run tests/regression.test.ts",
     "test:sync": "dotenv -e .env -- vitest run tests/sync.test.ts",
     "test:watch": "dotenv -e .env -- vitest",
+    "test:demo": "dotenv -e .env -- vitest run --dir demo",
     "test:report": "OPEN_REPORT=1 dotenv -e .env -- vitest run"
   },
   "keywords": [],

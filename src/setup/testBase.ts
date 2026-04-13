@@ -3,7 +3,7 @@ import { execSync } from 'node:child_process';
 import { readdirSync, statSync, mkdirSync, renameSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { ReportMergingTool } from '@midscene/core/report';
-import { createAgent, XMIND_PACKAGE, forceStopApp, clearAppData, disableSystemPopups } from './device';
+import { createAgent, XMIND_PACKAGE, forceStopApp, clearAppData, disableSystemPopups, type CacheOption } from './device';
 import type { AndroidAgent, AndroidDevice } from '@midscene/android';
 import type { TestStatus } from '@midscene/core';
 
@@ -16,6 +16,8 @@ export interface SetupOptions {
   waitForReady?: string;
   /** 指定设备序列号（adb devices 中的 udid），不传则使用第一个连接的设备 */
   deviceSerial?: string;
+  /** AI 缓存：true 开启 read-write，或指定策略 'read-only' | 'write-only' | 'read-write' */
+  cache?: CacheOption;
 }
 
 export function setupAndroidTest(reportName: string, options: SetupOptions = {}) {
@@ -24,6 +26,7 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
     autoLaunch = true,
     waitForReady = '应用主界面已加载完成',
     deviceSerial,
+    cache: cacheOption,
   } = options;
 
   let device: AndroidDevice;
@@ -40,7 +43,11 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
       suite = suite.suite;
     }
     const groupDescription = suiteNames.join(' › ') || ctx.task.name;
-    ({ device, agent } = await createAgent(ctx.task.name, deviceSerial, groupDescription));
+    // 每个用例独立 cacheId，避免多 agent 覆盖同一文件
+    const cacheConfig = cacheOption
+      ? { id: `${reportName}--${ctx.task.name}`, option: cacheOption }
+      : undefined;
+    ({ device, agent } = await createAgent(ctx.task.name, deviceSerial, groupDescription, cacheConfig));
 
     if (!systemPopupsDisabled) {
       await disableSystemPopups(agent);
@@ -65,17 +72,23 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
     const testStatus: TestStatus =
       state === 'pass' ? 'passed' : state === 'skip' ? 'skipped' : 'failed';
 
+    // 先把缓存写入磁盘（destroy 不会自动 flush cache）
+    if (agent && cacheOption) {
+      await agent.flushCache();
+    }
     // 必须先 destroy agent 让报告写入磁盘，再读取 reportFile
     if (agent) {
       await agent.destroy();
     }
 
     if (agent?.reportFile) {
+      const retryCount = (ctx.task as any).result?.retryCount ?? 0;
+      const titleSuffix = retryCount > 0 ? ` (重跑 #${retryCount})` : '';
       reportMergingTool.append({
         reportFilePath: agent.reportFile as string,
         reportAttributes: {
-          testId: ctx.task.name,
-          testTitle: ctx.task.name,
+          testId: ctx.task.name + titleSuffix,
+          testTitle: ctx.task.name + titleSuffix,
           testDuration: (Date.now() - (ctx.task.result?.startTime ?? Date.now())) | 0,
           testStatus,
         },

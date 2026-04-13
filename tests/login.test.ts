@@ -14,8 +14,10 @@ const WAIT_OPTS = { timeoutMs: 30000, checkIntervalMs: 5000 };
 const { getAgent } = setupAndroidTest('xmind-login-report', {
   clearData: true,
   waitForReady: '左侧导航栏中有"登录"按钮',
+  // 开启ai步骤缓存
+  cache: true,
 });
-// 是否打开报告： OPEN_REPORT=1
+// 是否打开报告： OPEN_REPORT=1. 默认是打开了
 // 按优先级分组运行：
 // 全部：npm run test:login
 // P0 核心登录流程：npm run test:login -- -t "P0"

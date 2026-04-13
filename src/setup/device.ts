@@ -3,10 +3,13 @@ import { AndroidDevice, AndroidAgent, getConnectedDevices } from '@midscene/andr
 export const XMIND_PACKAGE = 'net.xmind.doughnut';
 export const XMIND_LOGIN_ACTIVITY = `${XMIND_PACKAGE}/net.xmind.bagel.user.ui.WebLoginActivity`;
 
+export type CacheOption = boolean | 'read-only' | 'write-only' | 'read-write';
+
 export async function createAgent(
   testName: string,
   deviceSerial?: string,
   groupDescription?: string,
+  cache?: { id: string; option: CacheOption },
 ) {
   const devices = await getConnectedDevices();
   if (!devices.length) throw new Error('没有找到 adb 设备，请检查连接');
@@ -25,12 +28,21 @@ export async function createAgent(
   });
   await device.connect();
 
+  // 构建缓存配置
+  let cacheConfig: undefined | { id: string; strategy?: string };
+  if (cache && cache.option) {
+    const strategy =
+      cache.option === true ? 'read-write' : cache.option;
+    cacheConfig = { id: cache.id, strategy };
+  }
+
   const agent = new AndroidAgent(device, {
     groupName: testName,
     groupDescription: groupDescription ?? testName,
     aiActionContext:
       '遇到权限弹窗、用户协议弹窗，点击同意或关闭。遇到登录提示，关闭即可。遇到广告弹窗，关闭。' +
       '遇到 Google 密码管理器或系统自动填充弹窗，点击"永不"或关闭。',
+    ...(cacheConfig ? { cache: cacheConfig } : {}),
   });
 
   return { device, agent };
