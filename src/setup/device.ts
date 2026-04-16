@@ -41,7 +41,8 @@ export async function createAgent(
     groupDescription: groupDescription ?? testName,
     aiActionContext:
       '遇到权限弹窗、用户协议弹窗，点击同意或关闭。遇到登录提示，关闭即可。遇到广告弹窗，关闭。' +
-      '遇到 Google 密码管理器或系统自动填充弹窗，点击"永不"或关闭。',
+      '遇到 Google 密码管理器或系统自动填充弹窗，点击"永不"或关闭。' +
+      '遇到"授予 Xmind 文件夹访问权限"弹窗，点击"选择文件夹"按钮；在系统文件选择器中，如果当前文件夹名含"xmind"则直接点击底部"使用此文件夹"按钮，否则寻找含"xmind"字样的文件夹进入后再点击"使用此文件夹"。',
     ...(cacheConfig ? { cache: cacheConfig } : {}),
   });
 

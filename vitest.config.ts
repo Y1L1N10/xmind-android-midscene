@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     testTimeout: 120_000,
     hookTimeout: 60_000,
-    retry: 2,
+    retry: 1,
     reporters: ['verbose'],
     pool: 'forks',
     singleFork: true,

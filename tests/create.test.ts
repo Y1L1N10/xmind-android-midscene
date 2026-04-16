@@ -147,10 +147,56 @@ AI系统的训练依赖于大量数据，这引发了人们对个人隐私的担
 
   // ===================== P2 - 快捷输入与导入 =====================
   describe('P2 - 快捷输入与导入', () => {
-    it('导入入口可用', async () => {
+    it('导入到本地文件', async () => {
       const agent = getAgent();
-      await agent.aiTap('"导入"入口');
-      await agent.aiWaitFor('弹出文件选择器或导入界面', WAIT_OPTS);
+      // 先切换存放目标为"本地文件"
+      await agent.aiTap('右上角带上下箭头的目录切换按钮');
+      await agent.aiWaitFor('弹出"选择文件夹"弹窗，显示"本地文件"和在线导图列表', WAIT_OPTS);
+      await agent.aiTap('"本地文件"');
+      await agent.aiWaitFor('右上角目录显示"本地文件"', WAIT_OPTS);
+
+      // 确保新建页恢复就绪后再点导入
+      await agent.aiWaitFor('页面显示"空白导图"、"快捷输入"、"导入"三个入口', WAIT_OPTS);
+      await agent.aiTap('新建页面中的"导入"图标按钮');
+      await agent.aiWaitFor(
+        '页面已离开新建页，显示文件列表界面，包含"名称"和"类型"列标题',
+        { timeoutMs: 30000, checkIntervalMs: 5000 },
+      );
+      const hasXmindFile = await agent.aiBoolean('当前文件列表中是否能看到 .xmind 文件');
+      if (!hasXmindFile) {
+        await agent.aiAct('在文件选择器中寻找含"xmind"字样的文件夹并进入');
+      }
+      await agent.aiTap('列表中第一个 .xmind 文件');
+      // 导入后直接打开导图
+      await agent.aiWaitFor('左上角出现"完成"按钮，页面中显示导图节点内容', WAIT_OPTS);
+      await agent.aiAssert('页面中显示导图节点内容，左上角有"完成"按钮');
+    });
+
+    it('导入到我的导图', async () => {
+      const agent = getAgent();
+      // 先切换存放目标为"我的导图"
+      await agent.aiTap('右上角带上下箭头的目录切换按钮');
+      await agent.aiWaitFor('弹出"选择文件夹"弹窗，显示"本地文件"和在线导图列表', WAIT_OPTS);
+      await agent.aiTap('"我的导图"');
+      // 进入二级菜单，再次确认选择"我的导图"
+      await agent.aiTap('"我的导图"');
+      await agent.aiWaitFor('右上角目录显示"我的导图"', WAIT_OPTS);
+
+      // 确保新建页恢复就绪后再点导入
+      await agent.aiWaitFor('页面显示"空白导图"、"快捷输入"、"导入"三个入口', WAIT_OPTS);
+      await agent.aiTap('新建页面中的"导入"图标按钮');
+      await agent.aiWaitFor(
+        '页面已离开新建页，显示文件列表界面，包含"名称"和"类型"列标题',
+        { timeoutMs: 30000, checkIntervalMs: 5000 },
+      );
+      const hasXmindFile = await agent.aiBoolean('当前文件列表中是否能看到 .xmind 文件');
+      if (!hasXmindFile) {
+        await agent.aiAct('在文件选择器中寻找含"xmind"字样的文件夹并进入');
+      }
+      await agent.aiTap('列表中第一个 .xmind 文件');
+      // 导入后直接打开导图
+      await agent.aiWaitFor('左上角出现"完成"按钮，页面中显示导图节点内容', WAIT_OPTS);
+      await agent.aiAssert('页面中显示导图节点内容，左上角有"完成"按钮');
     });
 
     it('模板区域可滚动', async () => {

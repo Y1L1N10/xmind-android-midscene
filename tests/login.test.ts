@@ -17,13 +17,7 @@ const { getAgent } = setupAndroidTest('xmind-login-report', {
   // 开启ai步骤缓存
   cache: true,
 });
-// 是否打开报告： OPEN_REPORT=1. 默认是打开了
-// 按优先级分组运行：
-// 全部：npm run test:login
-// P0 核心登录流程：npm run test:login -- -t "P0"
-// P1 异常与校验：  npm run test:login -- -t "P1"
-// P2 UI与链接：    npm run test:login -- -t "P2"
-// P3 第三方登录：  npm run test:login -- -t "P3"
+// 运行命令见 docs/test-commands.md
 
 describe('XMind 登录模块', () => {
 

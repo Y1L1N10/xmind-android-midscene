@@ -55,7 +55,9 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
     }
 
     if (autoLaunch) {
-      if (clearData) {
+      // 首次执行 clearData，重跑时只 forceStop（省掉 WebView 冷启动）
+      const retryCount = (ctx.task as any).result?.retryCount ?? 0;
+      if (clearData && retryCount === 0) {
         await clearAppData(agent);
       } else {
         await forceStopApp(agent);
@@ -79,6 +81,10 @@ export function setupAndroidTest(reportName: string, options: SetupOptions = {})
     // 必须先 destroy agent 让报告写入磁盘，再读取 reportFile
     if (agent) {
       await agent.destroy();
+    }
+    // 断开设备连接，释放 scrcpy 会话，避免多次重跑时连接泄漏
+    if (device) {
+      await device.destroy();
     }
 
     if (agent?.reportFile) {
