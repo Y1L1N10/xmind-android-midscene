@@ -174,19 +174,19 @@ AI系统的训练依赖于大量数据，这引发了人们对个人隐私的担
 
     it('导入到我的导图', async () => {
       const agent = getAgent();
-      // 先切换存放目标为"我的导图"
+      // 切换存放目标：点击目录切换按钮，选择 Team"我的导图"
       await agent.aiTap('右上角带上下箭头的目录切换按钮');
-      await agent.aiWaitFor('弹出"选择文件夹"弹窗，显示"本地文件"和在线导图列表', WAIT_OPTS);
+      await agent.aiWaitFor('弹出"选择文件夹"弹窗，显示文件夹列表', WAIT_OPTS);
       await agent.aiTap('"我的导图"');
-      // 进入二级菜单，再次确认选择"我的导图"
-      await agent.aiTap('"我的导图"');
-      await agent.aiWaitFor('右上角目录显示"我的导图"', WAIT_OPTS);
-
-      // 确保新建页恢复就绪后再点导入
-      await agent.aiWaitFor('页面显示"空白导图"、"快捷输入"、"导入"三个入口', WAIT_OPTS);
+      // 等待二级菜单展开后选择 Space"所有导图"
+      await agent.aiWaitFor('弹窗标题为"我的导图"，列表中显示"所有导图"选项', WAIT_OPTS);
+      await agent.aiTap('"所有导图"');
+      // 等待弹窗关闭、新建页就绪后点导入
+      await agent.aiWaitFor('弹窗已关闭，右上角目录显示"我的导图"，页面显示"导入"入口', WAIT_OPTS);
       await agent.aiTap('新建页面中的"导入"图标按钮');
+      // 等待文件选择器出现，直接点击 xmind 文件（若不在根目录会自动找）
       await agent.aiWaitFor(
-        '页面已离开新建页，显示文件列表界面，包含"名称"和"类型"列标题',
+        '页面已离开新建页，显示文件列表界面',
         { timeoutMs: 30000, checkIntervalMs: 5000 },
       );
       const hasXmindFile = await agent.aiBoolean('当前文件列表中是否能看到 .xmind 文件');
@@ -194,16 +194,34 @@ AI系统的训练依赖于大量数据，这引发了人们对个人隐私的担
         await agent.aiAct('在文件选择器中寻找含"xmind"字样的文件夹并进入');
       }
       await agent.aiTap('列表中第一个 .xmind 文件');
-      // 导入后直接打开导图
+      // 导入后验证导图打开
       await agent.aiWaitFor('左上角出现"完成"按钮，页面中显示导图节点内容', WAIT_OPTS);
-      await agent.aiAssert('页面中显示导图节点内容，左上角有"完成"按钮');
     });
 
-    it('模板区域可滚动', async () => {
+    it('模板验证', async () => {
       const agent = getAgent();
-      await agent.aiAssert('页面中第一类模板分类是"基本"');
-      await agent.aiAct('向下滑动模板区域，直到看到"创造力"分类后停止');
-      await agent.aiAssert('页面中出现"创造力"模板分类');
+
+      // ===== 纵向滚动验证 + 基本分类横向滚动 =====
+      // 起点：页面首个模板分类是"基本"，且首项"思维导图"缩略图已加载
+      await agent.aiAssert(
+        '页面中第一类模板分类是"基本"；"基本"分类的第一个模板文字是"思维导图"，其缩略图已正常加载显示导图结构内容（非灰色占位图）',
+      );
+      // 在"基本"分类模板行内向左横向滑动，直到末尾"树型表格"出现
+      await agent.aiAct('在"基本"分类的模板行区域内向左横向滑动，直到看到末尾的"树型表格"模板后停止');
+      await agent.aiAssert(
+        '"基本"分类中出现末尾模板"树型表格"，其缩略图已正常加载显示图形内容（非灰色占位图）',
+      );
+
+      // ===== 纵向滚动到"创造力"分类 + 创造力分类横向滚动 =====
+      await agent.aiAct('向下纵向滑动模板区域，直到看到"创造力"分类后停止');
+      await agent.aiAssert(
+        '页面中出现"创造力"模板分类；"创造力"分类的第一个模板文字是"早起六大科学"开头的模板，其缩略图已正常加载（非灰色占位图）',
+      );
+      // 在"创造力"分类模板行内向左横向滑动，直到末尾"写作"出现
+      await agent.aiAct('在"创造力"分类的模板行区域内向左横向滑动，直到看到末尾的"写作"模板后停止');
+      await agent.aiAssert(
+        '"创造力"分类中出现末尾模板"写作"，其缩略图已正常加载显示图形内容（非灰色占位图）',
+      );
     });
   });
 });

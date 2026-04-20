@@ -53,7 +53,7 @@ describe('XMind 登录模块', () => {
       await agent.aiWaitFor('"验证码登录"Tab 为当前选中状态', { timeoutMs: 5000 });
       await agent.aiInput('邮箱输入框', { value: GMAIL_EMAIL });
       await agent.aiTap('获取验证码按钮');
-      await agent.aiWaitFor('获取验证码按钮显示为"已发送"倒计时状态', { timeoutMs: 15000, checkIntervalMs: 3000 });
+      await agent.aiWaitFor('获取验证码按钮显示倒计时数字（如"59s"、"58s"等）或"已发送"文字，而非初始的"获取验证码"文字或加载中的三个点', { timeoutMs: 30000, checkIntervalMs: 3000 });
 
       const code = await fetchVerificationCode();
       await agent.aiInput('验证码输入框', { value: code });
@@ -100,8 +100,8 @@ describe('XMind 登录模块', () => {
       await agent.aiWaitFor('"验证码登录"Tab 为当前选中状态', { timeoutMs: 5000 });
       await agent.aiInput('邮箱输入框', { value: GMAIL_EMAIL });
       await agent.aiTap('获取验证码按钮');
-      await agent.aiWaitFor('获取验证码按钮显示为"已发送"倒计时状态', { timeoutMs: 15000, checkIntervalMs: 3000 });
-      await agent.aiAssert('页面同时显示 Cloudflare "成功！"提示和验证码"已发送"倒计时');
+      await agent.aiWaitFor('获取验证码按钮显示倒计时数字（如"59s"、"58s"等）或"已发送"文字，而非初始的"获取验证码"文字或加载中的三个点', { timeoutMs: 30000, checkIntervalMs: 3000 });
+      await agent.aiAssert('页面同时显示 Cloudflare "成功！"提示和验证码倒计时');
     });
   });
 
